@@ -34,6 +34,7 @@ void main()
    __enable_interrupt();
 
     set_LEDs(0,0,0);
+    //void RTC_Init(uint16_t minC,uint16_t hrC,uint16_t Ahr,uint16_t Amin);
     uint16_t time[hours,mins,secs]; //needs to be returned from rtc comment out to fix error
    //char tempF[12];
 
@@ -282,3 +283,4 @@ void RTC_C_IRQHandler()
                                                         // is forgotten to be updated.
     }
 }
+
