@@ -17,6 +17,7 @@ void dataWrite(uint8_t str);
 void initialize_LEDs();
 void set_LEDs(int red, int blue, int green);
 void button_setup();
+int button_press()
 
 void RTC_Init();
 
@@ -36,10 +37,63 @@ void main()
 
     set_LEDs(0,0,0);
     //void RTC_Init(uint16_t minC,uint16_t hrC,uint16_t Ahr,uint16_t Amin);
-    //uint16_t time[hours,mins,secs]; //needs to be returned from rtc comment out to fix error
+    uint16_t minC=0, hrC=0, Ahr=0, Amin=0;
    //char tempF[12];
-
-
+    
+    int button_read;
+    
+     do{
+    button_read=button_press();
+         
+        if(button_read ==1) //set clock time
+            {
+            do{
+                button_read =button_press();
+              if(button_read ==2) //up
+                     {
+                      ++hrC;   //up
+                     if(hrC==24)
+                         hrC=0;
+                     }
+              else if(button_read ==3) //down
+                     {
+                      --hrC;    //down
+                        if(hrC==-1)
+                            hrC=23;
+                     }
+              else hrC =hrC;
+         }while(button_read != 1)
+                do{
+                    button_read =button_press;
+              if(button_read ==2) //up
+                     {
+                      ++minC;   //up
+                     if(minC==60)
+                         minC=0;
+                     }
+              else if(button_read ==3) //down
+                     {
+                      --minC;    //down
+                        if(minC==-1)
+                            minC=59;
+                     }
+              else minC=minC;
+         }while(button_read != 1)
+        }
+        
+         if(button_read ==4) //set alarm
+        {
+            if(button_read ==2) //up
+                     {
+                         //up
+                     }
+                 if(button_read ==3) //down
+                     {
+                          //down
+                     }
+        }
+    }while(button_read==0);
+    
     while(1){                                       // Main loop of program
         CommandWrite(0x80);
         dataWrite("Hello");
@@ -272,11 +326,11 @@ void RTC_C_IRQHandler()
         mins = (RTC_C->TIM0 & 0xFF00) >> 8;             // Record minutes (from top 8 bits of TIM0)
         secs = RTC_C->TIM0 & 0x00FF;                    // Record seconds (from bottom 8 bits of TIM0)
         // For increasing the number of seconds  every PS1 interrupt (to allow time travel)
-        if(secs != 59){                                 // If not  59 seconds, add 1 (otherwise 59+1 = 60 which doesn't work)
-            RTC_C->TIM0 = RTC_C->TIM0 + 1;
-        }
-        else {
-            RTC_C->TIM0 = (((RTC_C->TIM0 & 0xFF00) >> 8)+1)<<8;  // Add a minute if at 59 seconds.  This also resets seconds.
+//         if(secs != 59){                                 // If not  59 seconds, add 1 (otherwise 59+1 = 60 which doesn't work)
+            //RTC_C->TIM0 = RTC_C->TIM0 + 1;
+        //}
+//         else {
+//             RTC_C->TIM0 = (((RTC_C->TIM0 & 0xFF00) >> 8)+1)<<8;  // Add a minute if at 59 seconds.  This also resets seconds.
                                                                  // TODO: What happens if minutes are at 59 minutes as well?
             time_update = 1;                                     // Send flag to main program to notify a time update occurred.
         }
@@ -293,3 +347,46 @@ void RTC_C_IRQHandler()
     }
 }
 
+
+int button_press()
+{
+    int buttOut = 0;
+
+    if(!(P4->IN & BIT0)){
+    {
+        buttOut = 1;
+        __delay_cycles(15000);
+    }
+    while(!(P4->IN & BIT0)){}
+
+    return buttOut;
+    }
+     if(!(P4->IN & BIT1)){
+    {
+        buttOut = 2;
+        __delay_cycles(15000);
+    }
+    while(!(P4->IN & BIT1)){}
+
+    return buttOut;
+    }
+     if(!(P4->IN & BIT2)){
+    {
+        buttOut = 3;
+        __delay_cycles(15000);
+    }
+    while(!(P4->IN & BIT2)){}
+
+    return buttOut;
+    }
+     if(!(P4->IN & BIT3)){
+    {
+        buttOut = 4;
+        __delay_cycles(15000);
+    }
+    while(!(P4->IN & BIT3)){}
+
+    return buttOut;
+    }
+    return buttOut;
+}
