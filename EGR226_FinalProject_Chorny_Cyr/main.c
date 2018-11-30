@@ -17,172 +17,67 @@ void dataWrite(uint8_t str);
 void initialize_LEDs();
 void set_LEDs(int red, int blue, int green);
 void button_setup();
-int button_press()
-
+void convert(uint8_t string[50]);
 void RTC_Init();
+void set_clocks();
+int button_press();
+
 
 float voltage,tempF;
 uint8_t hours,mins,secs;
 int alarm_update=0,time_update=0;
 
-void main()
-{
+void main(void)
+        {
     __disable_irq();
     initialize_Sys();
     LCD_init();
     initialize_LEDs();
     button_setup();
-    RTC_Init();
+    //RTC_Init();
    __enable_interrupt();
 
-    set_LEDs(0,0,0);
-    //void RTC_Init(uint16_t minC,uint16_t hrC,uint16_t Ahr,uint16_t Amin);
-    uint16_t minC=0, hrC=0, Ahr=0, Amin=0;
+//    set_LEDs(0,0,0);
+//void RTC_Init(uint16_t minC,uint16_t hrC,uint16_t Ahr,uint16_t Amin);
+
    //char tempF[12];
-    
-    int button_read;
-    uint8_t setHrs[2],setMins[2];
-    
-     do{
-    button_read=button_press();
-         
-        if(button_read ==1) //set clock time
-            {
-            do{
-                button_read =button_press();
-              if(button_read ==2) //up
-                     {
-                      ++hrC;   //up
-                     if(hrC==24)
-                         hrC=0;
-                     }
-              else if(button_read ==3) //down
-                     {
-                      --hrC;    //down
-                        if(hrC==-1)
-                            hrC=23;
-                     }
-              else hrC =hrC;
-                
-                
-                setHrs[0] = (hrC/10)+48;
-                setHrs[1] = (hrC%10)+48;
-                if (setHrs[0]==48)
-                {
-                    CommandWrite(0x85);
-                    dataWrite(setHrs[1]);
-                }
-                else
-                {
-                    CommandWrite(0x84);
-                    convert(setHrs);
-                }
-                
-                
-         }while(button_read != 1)
-                
-                do{
-                    button_read =button_press;
-              if(button_read ==2) //up
-                     {
-                      ++minC;   //up
-                     if(minC==60)
-                         minC=0;
-                     }
-              else if(button_read ==3) //down
-                     {
-                      --minC;    //down
-                        if(minC==-1)
-                            minC=59;
-                     }
-              else minC=minC;
-                    
-                setMins[0] = (minC/10)+48;
-                setMins[1] = (minC%10)+48;
- 
-                CommandWrite(0x87);
-                convert(setMins);
 
-         }while(button_read != 1)
-        }
-        
-         if(button_read ==4) //set alarm
-        {
-            do{
-                button_read =button_press();
-              if(button_read ==2) //up
-                     {
-                      ++Ahr;   //up
-                     if(Ahr==24)
-                         Ahr=0;
-                     }
-              else if(button_read ==3) //down
-                     {
-                      --Ahr;    //down
-                        if(Ahr==-1)
-                            Ahr=23;
-                     }
-              else Ahr =Ahr;             
-                
-                setHrs[0] = (Ahr/10)+48;
-                setHrs[1] = (Ahr%10)+48;
-                if (setHrs[0]==48)
-                {
-                    CommandWrite(0xC5);
-                    dataWrite(setHrs[1]);
-                }
-                else
-                {
-                    CommandWrite(0xC4);
-                    convert(setHrs);
-                }
-                
-         }while(button_read != 4)
-                
-                do{
-                button_read =button_press();
-              if(button_read ==2) //up
-                     {
-                      ++Amin;   //up
-                     if(Amin==24)
-                         Amin=0;
-                     }
-              else if(button_read ==3) //down
-                     {
-                      --Amin;    //down
-                        if(Amin==-1)
-                            Amin=23;
-                     }
-              else Amin =Amin;             
-                
-                setHrs[0] = (Amin/10)+48;
-                setHrs[1] = (Amin%10)+48;
-                CommandWrite(0xC4);
-                convert(setHrs);
-                
-         }while(button_read != 4)
-        }
-    }while(button_read==0);
-    
+   set_clocks();
+
+   uint8_t hrs[2],minutes[2],seconds[2]; //array
+
     while(1){                                       // Main loop of program
+            if(time_update){                            // Time Update Occurred (from interrupt handler)
+                time_update = 0;                        // Reset Time Update Notification Flag
 
-//             if(time_update){                            // Time Update Occurred (from interrupt handler)
-//                 time_update = 0;                        // Reset Time Update Notification Flag
-//                 CommandWrite(0x80);
-//                 dataWrite(hours); //needs to be returned from rtc comment out to fix error
-//                 CommandWrite(0x81);
-//                 datawrite(":");
-//                 CommandWrite(0x82);
-//                 datawrite(mins);
-//                 CommandWrite(0x83);
-//                 datawrite(secs);
-//                // printf("%02d:%02d:%02d\n",hours,mins,secs); // Print time with mandatory 2 digits  each for hours, mins, seconds
-//             }
-//             if(alarm_update){                           // Alarm Update Occurred (from interrupt handler)
-//                 printf("ALARM\n");                      // Display Alarm status to user
-//                 alarm_update = 0;                       // Reset Alarm Update Notification Flag
-//             }
-//         }
+             CommandWrite(0x84); //LCD Writes to line 1 for hours
+             hrs[0] = (hours/10)+48; //+48 for ascii conversion
+             hrs[1]= (hours%10)+48; //+48 for ascii conversion
+             convert(hrs); //Receives time from RTC gets sent to convert
+
+                CommandWrite(0x86);
+                dataWrite(':'); //'' to pass character "" to pass string to LCD
+
+             CommandWrite(0x87); //LCD Writes to line 1 for minutes
+                minutes[0] = (mins/10)+48; //+48 for ascii conversion
+                minutes[1]= (mins%10)+48; //+48 for ascii conversion
+                convert(minutes); //Receives time from RTC gets sent to convert
+
+                CommandWrite(0x89);
+                dataWrite(':'); //'' to pass character "" to pass string to LCD
+
+                CommandWrite(0x8A); //LCD Writes to line 1 for seconds
+                seconds[0] = (secs/10)+48; //+48 for ascii conversion
+                seconds[1]= (secs%10)+48; //+48 for ascii conversion
+                convert(seconds); //Receives time from RTC gets sent to convert
+
+                printf("%02d:%02d:%02d\n",hours,mins,secs); // Print time with mandatory 2 digits  each for hours, mins, seconds
+            }
+            if(alarm_update){                           // Alarm Update Occurred (from interrupt handler)
+                printf("ALARM\n");                      // Display Alarm status to user
+                alarm_update = 0;                       // Reset Alarm Update Notification Flag
+            }
+        }
 }
 void initialize_Sys()
 {
@@ -308,7 +203,7 @@ void set_LEDs(int red, int blue, int green)  //0-100 for each
     }
 }
 
-void PORT1_IRQHandler()
+void PORT4_IRQHandler()
 {
 
 }
@@ -330,14 +225,14 @@ void button_setup()
     P4->OUT |= 0xF;
     P1->OUT |= BIT4;
 
-    P1->IES |= BIT4;
+   // P1->IES |= BIT4;
     //P4->IES |= BIT;
 
-    P1->IE |= BIT4;
+   // P1->IE |= BIT4;
     //P4->IE |= BIT;
 
-    NVIC_EnableIRQ(PORT1_IRQn);
-    //NVIC_EnableIRQ(PORT4_IRQn);
+  //  NVIC_EnableIRQ(PORT1_IRQn);
+    NVIC_EnableIRQ(PORT4_IRQn);
 }
 
 void ADC14init()
@@ -379,7 +274,7 @@ void RTC_Init(){
     //Alarm at 2:46 pm
     RTC_C->AMINHR = 14<<8 | 46 | BIT(15) | BIT(7);  //bit 15 and 7 are Alarm Enable bits
     RTC_C->ADOWDAY = 0;
-    RTC_C->PS1CTL = 0b00010;  //1/64 second interrupt
+    RTC_C->PS1CTL = 0b11010;  //1/128 second interrupt
 
     RTC_C->CTL0 = (0xA500) | BIT5; //turn on interrupt
     RTC_C->CTL13 = 0;
@@ -395,14 +290,14 @@ void RTC_C_IRQHandler()
         mins = (RTC_C->TIM0 & 0xFF00) >> 8;             // Record minutes (from top 8 bits of TIM0)
         secs = RTC_C->TIM0 & 0x00FF;                    // Record seconds (from bottom 8 bits of TIM0)
         // For increasing the number of seconds  every PS1 interrupt (to allow time travel)
-//         if(secs != 59){                                 // If not  59 seconds, add 1 (otherwise 59+1 = 60 which doesn't work)
-            //RTC_C->TIM0 = RTC_C->TIM0 + 1;
-        //}
-//         else {
-//             RTC_C->TIM0 = (((RTC_C->TIM0 & 0xFF00) >> 8)+1)<<8;  // Add a minute if at 59 seconds.  This also resets seconds.
-                                                                 // TODO: What happens if minutes are at 59 minutes as well?
+//        if(secs != 59){                                 // If not  59 seconds, add 1 (otherwise 59+1 = 60 which doesn't work)
+//            RTC_C->TIM0 = RTC_C->TIM0 + 1;
+//        }
+//        else {
+//            RTC_C->TIM0 = (((RTC_C->TIM0 & 0xFF00) >> 8)+1)<<8;  // Add a minute if at 59 seconds.  This also resets seconds.
+//                                                                 // TODO: What happens if minutes are at 59 minutes as well?
             time_update = 1;                                     // Send flag to main program to notify a time update occurred.
-        }
+       // }
         RTC_C->PS1CTL &= ~BIT0;                         // Reset interrupt flag
     }
     if(RTC_C->CTL0 & BIT1)                              // Alarm happened!
@@ -415,7 +310,184 @@ void RTC_C_IRQHandler()
                                                         // is forgotten to be updated.
     }
 }
+void convert(uint8_t string[50]) //Grabs array and puts it integers into characters
+{
 
+    int length,i=0;
+
+    length = strlen(string);
+
+    for(i;i<length;i++)
+    {
+        dataWrite(string[i]);
+    }
+}
+
+void set_clocks()
+{
+    int button_read;
+    int hrC=0,minC=0,Amin=0,Ahr=0;
+    uint8_t setHrs[2],setMins[2];
+
+    CommandWrite(0x84);
+    convert("00:00:00");
+    CommandWrite(0xC4);
+    convert("00:00:00");
+
+     do{
+    button_read=button_press();
+
+        if(button_read ==1) //set clock time
+            {
+            do{
+                button_read =button_press();
+              if(button_read ==2) //up
+                     {
+                      ++hrC;   //up
+                     if(hrC==24)
+                         hrC=0;
+                     }
+              else if(button_read ==3) //down
+                     {
+                      --hrC;    //down
+                        if(hrC==-1)
+                            hrC=23;
+                     }
+              else hrC =hrC;
+
+              CommandWrite(0x84);
+
+              if(hrC < 10)
+              {
+                  //CommandWrite(0x85);
+                  setHrs[0]= ' ';
+                  setHrs[1]=(hrC%10)+48;
+                  convert(setHrs);
+              }
+              else if((hrC>9)&&(hrC<20))
+              {
+                  setHrs[0]='1';
+                  setHrs[1]=(hrC%10)+48;
+                  convert(setHrs);
+              }
+              else if(hrC>=20)
+              {
+                  setHrs[0]='2';
+                  setHrs[1]=(hrC%10)+48;
+                  convert(setHrs);
+              }
+              else convert("00");
+//                setHrs[0] = (hrC/10)+48;
+//                setHrs[1] = (hrC%10)+48;
+//                if (setHrs[0]==48)
+//                {
+//                    CommandWrite(0x85);
+//                    setHrs[0] = ' ';
+//                    convert(setHrs);
+//                }
+//                else
+//                {
+//                    CommandWrite(0x84);
+//                    convert(setHrs);
+//                }
+
+
+         }while(button_read != 1);
+
+                do{
+                    button_read =button_press();
+              if(button_read ==2) //up
+                     {
+                      ++minC;   //up
+                     if(minC==60)
+                         minC=0;
+                     }
+              else if(button_read ==3) //down
+                     {
+                      --minC;    //down
+                        if(minC==-1)
+                            minC=59;
+                     }
+              else minC=minC;
+
+              CommandWrite(0x87);
+              if(minC < 10)
+                {
+                    //CommandWrite(0x85);
+                    setMins[0]= '0';
+                    setMins[1]=(minC%10)+48;
+                    convert(setMins);
+                }
+              else{
+                  setMins[0]=(minC/10)+48;
+                  setMins[1]=(minC%10)+48;
+              }
+
+
+         }while(button_read != 1);
+        }
+
+        button_read=button_press();
+
+         if(button_read ==4) //set alarm
+        {
+            do{
+                button_read =button_press();
+              if(button_read ==2) //up
+                     {
+                      ++Ahr;   //up
+                     if(Ahr==24)
+                         Ahr=0;
+                     }
+              else if(button_read ==3) //down
+                     {
+                      --Ahr;    //down
+                        if(Ahr==-1)
+                            Ahr=23;
+                     }
+              else Ahr =Ahr;
+
+                setHrs[0] = (Ahr/10)+48;
+                setHrs[1] = (Ahr%10)+48;
+                if (setHrs[0]==0)
+                {
+                    CommandWrite(0xC5);
+                    setHrs[0] = ' ';
+                    convert(setHrs);
+                }
+                else
+                {
+                    CommandWrite(0xC4);
+                    convert(setHrs);
+                }
+
+         }while(button_read != 4);
+
+                do{
+                button_read =button_press();
+              if(button_read ==2) //up
+                     {
+                      ++Amin;   //up
+                     if(Amin==24)
+                         Amin=0;
+                     }
+              else if(button_read ==3) //down
+                     {
+                      --Amin;    //down
+                        if(Amin==-1)
+                            Amin=23;
+                     }
+              else Amin =Amin;
+
+                setHrs[0] = (Amin/10)+48;
+                setHrs[1] = (Amin%10)+48;
+                CommandWrite(0xC4);
+                convert(setHrs);
+
+         }while(button_read != 4);
+        }
+    }while(button_read!=2);
+     }
 
 int button_press()
 {
