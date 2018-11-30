@@ -21,7 +21,8 @@ void button_setup();
 void RTC_Init();
 
 float voltage,tempF;
-uint16_t hours,mins,secs,alarm_update=0,time_update=0;
+uint8_t hours,mins,secs;
+int alarm_update=0,time_update=0;
 
 void main()
 {
@@ -40,23 +41,25 @@ void main()
 
 
     while(1){                                       // Main loop of program
-            if(time_update){                            // Time Update Occurred (from interrupt handler)
-                time_update = 0;                        // Reset Time Update Notification Flag
-                CommandWrite(0x80);
-                DataWrite(hours); //needs to be returned from rtc comment out to fix error
-                CommandWrite(0x81);
-                Datawrite(":");
-                CommandWrite(0x82);
-                Datawrite(mins);
-                CommandWrite(0x83);
-                Datawrite(secs);
-               // printf("%02d:%02d:%02d\n",hours,mins,secs); // Print time with mandatory 2 digits  each for hours, mins, seconds
-            }
-            if(alarm_update){                           // Alarm Update Occurred (from interrupt handler)
-                printf("ALARM\n");                      // Display Alarm status to user
-                alarm_update = 0;                       // Reset Alarm Update Notification Flag
-            }
-        }
+        CommandWrite(0x80);
+        dataWrite("Hello");
+//             if(time_update){                            // Time Update Occurred (from interrupt handler)
+//                 time_update = 0;                        // Reset Time Update Notification Flag
+//                 CommandWrite(0x80);
+//                 dataWrite(hours); //needs to be returned from rtc comment out to fix error
+//                 CommandWrite(0x81);
+//                 datawrite(":");
+//                 CommandWrite(0x82);
+//                 datawrite(mins);
+//                 CommandWrite(0x83);
+//                 datawrite(secs);
+//                // printf("%02d:%02d:%02d\n",hours,mins,secs); // Print time with mandatory 2 digits  each for hours, mins, seconds
+//             }
+//             if(alarm_update){                           // Alarm Update Occurred (from interrupt handler)
+//                 printf("ALARM\n");                      // Display Alarm status to user
+//                 alarm_update = 0;                       // Reset Alarm Update Notification Flag
+//             }
+//         }
 }
 void initialize_Sys()
 {
