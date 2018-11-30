@@ -41,6 +41,7 @@ void main()
    //char tempF[12];
     
     int button_read;
+    uint8_t setHrs[2],setMins[2];
     
      do{
     button_read=button_press();
@@ -62,7 +63,24 @@ void main()
                             hrC=23;
                      }
               else hrC =hrC;
+                
+                
+                setHrs[0] = (hrC/10)+48;
+                setHrs[1] = (hrC%10)+48;
+                if (setHrs[0]==48)
+                {
+                    CommandWrite(0x85);
+                    dataWrite(setHrs[1]);
+                }
+                else
+                {
+                    CommandWrite(0x84);
+                    convert(setHrs);
+                }
+                
+                
          }while(button_read != 1)
+                
                 do{
                     button_read =button_press;
               if(button_read ==2) //up
@@ -78,25 +96,76 @@ void main()
                             minC=59;
                      }
               else minC=minC;
+                    
+                setMins[0] = (minC/10)+48;
+                setMins[1] = (minC%10)+48;
+ 
+                CommandWrite(0x87);
+                convert(setMins);
+
          }while(button_read != 1)
         }
         
          if(button_read ==4) //set alarm
         {
-            if(button_read ==2) //up
+            do{
+                button_read =button_press();
+              if(button_read ==2) //up
                      {
-                         //up
+                      ++Ahr;   //up
+                     if(Ahr==24)
+                         Ahr=0;
                      }
-                 if(button_read ==3) //down
+              else if(button_read ==3) //down
                      {
-                          //down
+                      --Ahr;    //down
+                        if(Ahr==-1)
+                            Ahr=23;
                      }
+              else Ahr =Ahr;             
+                
+                setHrs[0] = (Ahr/10)+48;
+                setHrs[1] = (Ahr%10)+48;
+                if (setHrs[0]==48)
+                {
+                    CommandWrite(0xC5);
+                    dataWrite(setHrs[1]);
+                }
+                else
+                {
+                    CommandWrite(0xC4);
+                    convert(setHrs);
+                }
+                
+         }while(button_read != 4)
+                
+                do{
+                button_read =button_press();
+              if(button_read ==2) //up
+                     {
+                      ++Amin;   //up
+                     if(Amin==24)
+                         Amin=0;
+                     }
+              else if(button_read ==3) //down
+                     {
+                      --Amin;    //down
+                        if(Amin==-1)
+                            Amin=23;
+                     }
+              else Amin =Amin;             
+                
+                setHrs[0] = (Amin/10)+48;
+                setHrs[1] = (Amin%10)+48;
+                CommandWrite(0xC4);
+                convert(setHrs);
+                
+         }while(button_read != 4)
         }
     }while(button_read==0);
     
     while(1){                                       // Main loop of program
-        CommandWrite(0x80);
-        dataWrite("Hello");
+
 //             if(time_update){                            // Time Update Occurred (from interrupt handler)
 //                 time_update = 0;                        // Reset Time Update Notification Flag
 //                 CommandWrite(0x80);
