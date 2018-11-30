@@ -18,7 +18,7 @@ void initialize_LEDs();
 void set_LEDs(int red, int blue, int green);
 void button_setup();
 
-void RTC_Init(uint16_t minC,uint16_t hrC,uint16_t Ahr,uint16_t Amin);
+void RTC_Init();
 
 float voltage,tempF;
 uint16_t hours,mins,secs,alarm_update=0,time_update=0;
@@ -30,21 +30,27 @@ void main()
     LCD_init();
     initialize_LEDs();
     button_setup();
-    //RTC_Init();
+    RTC_Init();
    __enable_interrupt();
 
     set_LEDs(0,0,0);
+    uint16_t time[hours,mins,secs]; //needs to be returned from rtc comment out to fix error
+   //char tempF[12];
 
-    char tempF[12];
-    uint8_t Ahrs,Amins,Asecs,Chrs,Cmins,Csecs;
 
-    while(1){
-
-    }
-
- 
+    while(1){                                       // Main loop of program
+            if(time_update){                            // Time Update Occurred (from interrupt handler)
+                time_update = 0;                        // Reset Time Update Notification Flag
+                CommandWrite(0x80);
+                DataWrite(time[hours,mins,secs]); //needs to be returned from rtc comment out to fix error
+               // printf("%02d:%02d:%02d\n",hours,mins,secs); // Print time with mandatory 2 digits  each for hours, mins, seconds
+            }
+            if(alarm_update){                           // Alarm Update Occurred (from interrupt handler)
+                printf("ALARM\n");                      // Display Alarm status to user
+                alarm_update = 0;                       // Reset Alarm Update Notification Flag
+            }
+        }
 }
-
 void initialize_Sys()
 {
     SysTick->CTRL = 0; //OFF
@@ -228,44 +234,51 @@ void ADC14_IRQHandler()
     ADC14->CLRIFGR1 &= ~0b1111110;
 }
 
-void RTC_Init(uint16_t minC,uint16_t hrC,uint16_t Ahr,uint16_t Amin){
+void RTC_Init(){
     //Initialize time to 2:45:55 pm
-
+//    RTC_C->TIM0 = 0x2D00;  //45 min, 0 secs
     RTC_C->CTL0 = (0xA500);
     RTC_C->CTL13 = 0;
 
-    RTC_C->TIM0 = minC<<8 | 0;//45 min, 55 secs
-    RTC_C->TIM1 = 0<<8 | hrC;  //Monday, 2 pm
-    //RTC_C->YEAR = 2018;
-
-    RTC_C->AMINHR = Ahr<<8 | Amin | BIT(15) | BIT(7);  //bit 15 and 7 are Alarm Enable bits //Alarm at 2:46 pm
+    RTC_C->TIM0 = 45<<8 | 55;//45 min, 55 secs
+    RTC_C->TIM1 = 1<<8 | 14;  //Monday, 2 pm
+    RTC_C->YEAR = 2018;
+    //Alarm at 2:46 pm
+    RTC_C->AMINHR = 14<<8 | 46 | BIT(15) | BIT(7);  //bit 15 and 7 are Alarm Enable bits
     RTC_C->ADOWDAY = 0;
     RTC_C->PS1CTL = 0b00010;  //1/64 second interrupt
 
     RTC_C->CTL0 = (0xA500) | BIT5; //turn on interrupt
     RTC_C->CTL13 = 0;
-
+    //TODO
     NVIC_EnableIRQ(RTC_C_IRQn);
 }
 
+
 void RTC_C_IRQHandler()
 {
-    if(RTC_C->PS1CTL & BIT0){
-        hours = RTC_C->TIM1 & 0x00FF;
-        mins = (RTC_C->TIM0 & 0xFF00) >> 8;
-        secs = RTC_C->TIM0 & 0x00FF;
-        if(secs != 59){
+    if(RTC_C->PS1CTL & BIT0){                           // PS1 Interrupt Happened
+        hours = RTC_C->TIM1 & 0x00FF;                   // Record hours (from bottom 8 bits of TIM1)
+        mins = (RTC_C->TIM0 & 0xFF00) >> 8;             // Record minutes (from top 8 bits of TIM0)
+        secs = RTC_C->TIM0 & 0x00FF;                    // Record seconds (from bottom 8 bits of TIM0)
+        // For increasing the number of seconds  every PS1 interrupt (to allow time travel)
+        if(secs != 59){                                 // If not  59 seconds, add 1 (otherwise 59+1 = 60 which doesn't work)
             RTC_C->TIM0 = RTC_C->TIM0 + 1;
         }
         else {
-            RTC_C->TIM0 = (((RTC_C->TIM0 & 0xFF00) >> 8)+1)<<8;
-            time_update = 1;
+            RTC_C->TIM0 = (((RTC_C->TIM0 & 0xFF00) >> 8)+1)<<8;  // Add a minute if at 59 seconds.  This also resets seconds.
+                                                                 // TODO: What happens if minutes are at 59 minutes as well?
+            time_update = 1;                                     // Send flag to main program to notify a time update occurred.
         }
-        RTC_C->PS1CTL &= ~BIT0;
+        RTC_C->PS1CTL &= ~BIT0;                         // Reset interrupt flag
     }
-    if(RTC_C->CTL0 & BIT1)
+    if(RTC_C->CTL0 & BIT1)                              // Alarm happened!
     {
-        alarm_update = 1;
-        RTC_C->CTL0 = (0xA500) | BIT5;
+        alarm_update = 1;                               // Send flag to main program to notify a time update occurred.
+        RTC_C->CTL0 = (0xA500) | BIT5;                  // Resetting the alarm flag.  Need to also write the secret code
+                                                        // and rewrite the entire register.
+                                                        // TODO: It seems like there is a better way to preserve what was already
+                                                        // there in case the setup of this register needs to change and this line
+                                                        // is forgotten to be updated.
     }
 }
