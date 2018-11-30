@@ -35,7 +35,7 @@ void main()
 
     set_LEDs(0,0,0);
     //void RTC_Init(uint16_t minC,uint16_t hrC,uint16_t Ahr,uint16_t Amin);
-    uint16_t time[hours,mins,secs]; //needs to be returned from rtc comment out to fix error
+    //uint16_t time[hours,mins,secs]; //needs to be returned from rtc comment out to fix error
    //char tempF[12];
 
 
@@ -43,7 +43,13 @@ void main()
             if(time_update){                            // Time Update Occurred (from interrupt handler)
                 time_update = 0;                        // Reset Time Update Notification Flag
                 CommandWrite(0x80);
-                DataWrite(time[hours,mins,secs]); //needs to be returned from rtc comment out to fix error
+                DataWrite(hours); //needs to be returned from rtc comment out to fix error
+                CommandWrite(0x81);
+                Datawrite(":");
+                CommandWrite(0x82);
+                Datawrite(mins);
+                CommandWrite(0x83);
+                Datawrite(secs);
                // printf("%02d:%02d:%02d\n",hours,mins,secs); // Print time with mandatory 2 digits  each for hours, mins, seconds
             }
             if(alarm_update){                           // Alarm Update Occurred (from interrupt handler)
