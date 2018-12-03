@@ -20,11 +20,12 @@ void initialize_LEDs();
 void set_LEDs(int red, int blue, int green);
 void button_setup();
 void convert(uint8_t string[50]);
-void RTC_Init();
+//void RTC_Init();
+void RTC_Init(uint16_t minC,uint16_t hrC,uint16_t Ahr,uint16_t Amin);
 void set_clocks();
 int button_press();
 int set_hours(int clock_type);
-
+int set_minutes(int clock_type)
 
 float voltage,tempF;
 uint8_t hours,mins,secs;
@@ -46,9 +47,11 @@ void main(void)
    //char tempF[12];
 
    hrC = set_hours(MAIN_CLOCK);
-   //minC = set_minutes(MAIN_CLOCK);
+   minC = set_minutes(MAIN_CLOCK);
    Ahr = set_hours(ALARM);
-   //Amin = set_minutes(ALARM);
+   Amin = set_minutes(ALARM);
+        
+   RTC_Init(uint16_t minC,uint16_t hrC,uint16_t Ahr,uint16_t Amin);
 
    uint8_t hrs[2],minutes[2],seconds[2]; //array
 
@@ -268,17 +271,18 @@ void ADC14_IRQHandler()
     ADC14->CLRIFGR1 &= ~0b1111110;
 }
 
-void RTC_Init(){
+//void RTC_Init(){
+void RTC_Init(uint16_t minC,uint16_t hrC,uint16_t Ahr,uint16_t Amin){
     //Initialize time to 2:45:55 pm
 //    RTC_C->TIM0 = 0x2D00;  //45 min, 0 secs
     RTC_C->CTL0 = (0xA500);
     RTC_C->CTL13 = 0;
 
-    RTC_C->TIM0 = 45<<8 | 55;//45 min, 55 secs
-    RTC_C->TIM1 = 1<<8 | 14;  //Monday, 2 pm
+    RTC_C->TIM0 = minC<<8 | 55;//45 min, 55 secs
+    RTC_C->TIM1 = 1<<8 | hrC;  //Monday, 2 pm
     RTC_C->YEAR = 2018;
     //Alarm at 2:46 pm
-    RTC_C->AMINHR = 14<<8 | 46 | BIT(15) | BIT(7);  //bit 15 and 7 are Alarm Enable bits
+    RTC_C->AMINHR = Ahr<<8 | Amin | BIT(15) | BIT(7);  //bit 15 and 7 are Alarm Enable bits
     RTC_C->ADOWDAY = 0;
     RTC_C->PS1CTL = 0b11010;  //1/128 second interrupt
 
@@ -591,3 +595,80 @@ int set_hours(int clock_type)
     return hrs;
 }
 
+int set_minutes(int clock_type)
+{
+    int button_read;
+    int hrs=0;//,minC=0,Amin=0,Ahr=0;
+    uint8_t setHrs[2];//,setMins[2];
+
+    if(clock_type == MAIN_CLOCK){
+    CommandWrite(0x87);
+    convert("00:00:00");}
+    if(clock_type == ALARM){
+    CommandWrite(0xC7);
+    convert("00:00:00");}
+
+            do{
+                button_read =button_press();
+              if(button_read ==2) //up
+                     {
+                      ++mins;   //up
+                     if(mins==60)
+                         mins=0;
+                     }
+              else if(button_read ==3) //down
+                     {
+                      --mins;    //down
+                        if(mins==-1)
+                            mins=59;
+                     }
+              else hrs =hrs;
+
+              if(clock_type == MAIN_CLOCK)
+                CommandWrite(0x87);
+              else if(clock_type == ALARM)
+                CommandWrite(0xC7);
+
+              if(mins < 10)
+              {
+                  //CommandWrite(0x85);
+                  setMins[0]= ' ';
+                  setMins[1]=(mins%10)+48;
+                  convert(setMins);
+              }
+              else if((mins>9)&&(mins<20))
+              {
+                  setMins[0]='1';
+                  setMins[1]=(mins%10)+48;
+                  convert(setMins);
+              }
+              else if(mins>=20 && mins <30)
+              {
+                  setMins[0]='2';
+                  setMins[1]=(mins%10)+48;
+                  convert(setMins);
+              }
+              else if(mins>=30 && mins <40)
+              {
+                  setMins[0]='3';
+                  setMins[1]=(mins%10)+48;
+                  convert(setMins);
+              }
+              else if(mins>=40 && mins <50)
+              {
+                  setMins[0]='4';
+                  setMins[1]=(mins%10)+48;
+                  convert(setMins);
+              }
+               else if(mins>=50 && mins <60)
+              {
+                  setMins[0]='5';
+                  setMins[1]=(mins%10)+48;
+                  convert(setMins);
+              }
+              else convert("00");
+
+         }while(button_read != 1);
+
+    return mins;
+}
