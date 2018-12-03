@@ -4,6 +4,8 @@
 
 #define DELAY 10
 #define ADC_CONVERSION_RATE 30000
+#define ALARM 2
+#define MAIN_CLOCK 1
 
 void ADC14init();
 void initialize_Sys();
@@ -21,6 +23,7 @@ void convert(uint8_t string[50]);
 void RTC_Init();
 void set_clocks();
 int button_press();
+int set_hours(int clock_type);
 
 
 float voltage,tempF;
@@ -38,11 +41,14 @@ void main(void)
    __enable_interrupt();
 
 //    set_LEDs(0,0,0);
-//void RTC_Init(uint16_t minC,uint16_t hrC,uint16_t Ahr,uint16_t Amin);
+//RTC_Init(uint16_t minC,uint16_t hrC,uint16_t Ahr,uint16_t Amin);
 
    //char tempF[12];
 
-   set_clocks();
+   hrC = set_hours(MAIN_CLOCK);
+   //minC = set_minutes(MAIN_CLOCK);
+   Ahr = set_hours(ALARM);
+   //Amin = set_minutes(ALARM);
 
    uint8_t hrs[2],minutes[2],seconds[2]; //array
 
@@ -377,20 +383,6 @@ void set_clocks()
                   convert(setHrs);
               }
               else convert("00");
-//                setHrs[0] = (hrC/10)+48;
-//                setHrs[1] = (hrC%10)+48;
-//                if (setHrs[0]==48)
-//                {
-//                    CommandWrite(0x85);
-//                    setHrs[0] = ' ';
-//                    convert(setHrs);
-//                }
-//                else
-//                {
-//                    CommandWrite(0x84);
-//                    convert(setHrs);
-//                }
-
 
          }while(button_read != 1);
 
@@ -419,15 +411,14 @@ void set_clocks()
                     convert(setMins);
                 }
               else{
-                  setMins[0]=(minC/10)+48;
+                  setMins[0]=(uint8_t)((minC/10)+48);
                   setMins[1]=(minC%10)+48;
               }
-
 
          }while(button_read != 1);
         }
 
-        button_read=button_press();
+        //button_read=button_press();
 
          if(button_read ==4) //set alarm
         {
@@ -447,19 +438,27 @@ void set_clocks()
                      }
               else Ahr =Ahr;
 
-                setHrs[0] = (Ahr/10)+48;
-                setHrs[1] = (Ahr%10)+48;
-                if (setHrs[0]==0)
-                {
-                    CommandWrite(0xC5);
-                    setHrs[0] = ' ';
-                    convert(setHrs);
-                }
-                else
-                {
-                    CommandWrite(0xC4);
-                    convert(setHrs);
-                }
+              CommandWrite(0xC5);    
+                    if(Ahr < 10)
+              {
+                  
+                  setHrs[0]= ' ';
+                  setHrs[1]=(Ahr%10)+48;
+                  convert(setHrs);
+              }
+              else if((Ahr>9)&&(Ahr<20))
+              {
+                  setHrs[0]='1';
+                  setHrs[1]=(Ahr%10)+48;
+                  convert(setHrs);
+              }
+              else if(Ahr>=20)
+              {
+                  setHrs[0]='2';
+                  setHrs[1]=(Ahr%10)+48;
+                  convert(setHrs);
+              }
+              else convert("00");
 
          }while(button_read != 4);
 
@@ -479,8 +478,8 @@ void set_clocks()
                      }
               else Amin =Amin;
 
-                setHrs[0] = (Amin/10)+48;
-                setHrs[1] = (Amin%10)+48;
+                setMins[0] = (Amin/10)+48;
+                setMins[1] = (Amin%10)+48;
                 CommandWrite(0xC4);
                 convert(setHrs);
 
@@ -531,3 +530,64 @@ int button_press()
     }
     return buttOut;
 }
+
+int set_hours(int clock_type)
+{
+    int button_read;
+    int hrs=0;//,minC=0,Amin=0,Ahr=0;
+    uint8_t setHrs[2];//,setMins[2];
+
+    if(clock_type == MAIN_CLOCK){
+    CommandWrite(0x84);
+    convert("00:00:00");}
+    if(clock_type == ALARM){
+    CommandWrite(0xC4);
+    convert("00:00:00");}
+
+            do{
+                button_read =button_press();
+              if(button_read ==2) //up
+                     {
+                      ++hrs;   //up
+                     if(hrs==24)
+                         hrs=0;
+                     }
+              else if(button_read ==3) //down
+                     {
+                      --hrs;    //down
+                        if(hrs==-1)
+                            hrs=23;
+                     }
+              else hrs =hrs;
+
+              if(clock_type == MAIN_CLOCK)
+                CommandWrite(0x84);
+              else if(clock_type == ALARM)
+                CommandWrite(0xC4);
+
+              if(hrs < 10)
+              {
+                  //CommandWrite(0x85);
+                  setHrs[0]= ' ';
+                  setHrs[1]=(hrs%10)+48;
+                  convert(setHrs);
+              }
+              else if((hrs>9)&&(hrs<20))
+              {
+                  setHrs[0]='1';
+                  setHrs[1]=(hrs%10)+48;
+                  convert(setHrs);
+              }
+              else if(hrs>=20)
+              {
+                  setHrs[0]='2';
+                  setHrs[1]=(hrs%10)+48;
+                  convert(setHrs);
+              }
+              else convert("00");
+
+         }while(button_read != 1);
+
+    return hrs;
+}
+
