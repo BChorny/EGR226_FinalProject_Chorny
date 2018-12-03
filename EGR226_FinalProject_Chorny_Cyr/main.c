@@ -44,7 +44,22 @@ void main(void)
 //    set_LEDs(0,0,0);
 //RTC_Init(uint16_t minC,uint16_t hrC,uint16_t Ahr,uint16_t Amin);
 
-   //char tempF[12];
+    int i=0;
+                    temperatureC = (((voltage*1000)-500)/10);
+
+                           sprintf(tempc,"temp %.1f C",temperatureC);
+                          dataWrite(tempc[i]);
+                           temperatureF = (temperatureC * 1.8) +32;
+                           sprintf(tempf,"temp %.1f F",temperatureF);
+
+                          dataWrite(tempf[i]);
+
+                           for(i=0;i<12;i++){
+                               CommandWrite(0x90+(i));
+                               dataWrite(tempc[i]);
+                               CommandWrite(0xC0+(i));
+                               dataWrite(tempf[i]);
+
 
    hrC = set_hours(MAIN_CLOCK);
    minC = set_minutes(MAIN_CLOCK);
