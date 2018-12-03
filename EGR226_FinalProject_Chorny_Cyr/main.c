@@ -21,15 +21,17 @@ void set_LEDs(int red, int blue, int green);
 void button_setup();
 void convert(uint8_t string[50]);
 //void RTC_Init();
-void RTC_Init(uint16_t minC,uint16_t hrC,uint16_t Ahr,uint16_t Amin);
+void RTC_Init();
 void set_clocks();
 int button_press();
 int set_hours(int clock_type);
-int set_minutes(int clock_type)
+int set_minutes(int clock_type);
 
-float voltage,tempF;
+float voltage,temperatureF, temperatureC;
 uint8_t hours,mins,secs;
 int alarm_update=0,time_update=0;
+uint16_t minC, hrC, Ahr, Amin;
+char tempc[12],tempf[12];
 
 void main(void)
         {
@@ -40,11 +42,12 @@ void main(void)
     button_setup();
     //RTC_Init();
    __enable_interrupt();
+// RTC_Init(uint16_t minC,uint16_t hrC,uint16_t Ahr,uint16_t Amin);
 
 //    set_LEDs(0,0,0);
-//RTC_Init(uint16_t minC,uint16_t hrC,uint16_t Ahr,uint16_t Amin);
 
-    int i=0;
+
+                       int i=0;
                     temperatureC = (((voltage*1000)-500)/10);
 
                            sprintf(tempc,"temp %.1f C",temperatureC);
@@ -57,16 +60,16 @@ void main(void)
                            for(i=0;i<12;i++){
                                CommandWrite(0x90+(i));
                                dataWrite(tempc[i]);
-                               CommandWrite(0xC0+(i));
+                               CommandWrite(0xD0+(i));
                                dataWrite(tempf[i]);
 
-
+                               }
    hrC = set_hours(MAIN_CLOCK);
    minC = set_minutes(MAIN_CLOCK);
    Ahr = set_hours(ALARM);
    Amin = set_minutes(ALARM);
-        
-   RTC_Init(uint16_t minC,uint16_t hrC,uint16_t Ahr,uint16_t Amin);
+
+RTC_Init();
 
    uint8_t hrs[2],minutes[2],seconds[2]; //array
 
@@ -287,7 +290,8 @@ void ADC14_IRQHandler()
 }
 
 //void RTC_Init(){
-void RTC_Init(uint16_t minC,uint16_t hrC,uint16_t Ahr,uint16_t Amin){
+void RTC_Init()
+{
     //Initialize time to 2:45:55 pm
 //    RTC_C->TIM0 = 0x2D00;  //45 min, 0 secs
     RTC_C->CTL0 = (0xA500);
@@ -457,10 +461,10 @@ void set_clocks()
                      }
               else Ahr =Ahr;
 
-              CommandWrite(0xC5);    
+              CommandWrite(0xC5);
                     if(Ahr < 10)
               {
-                  
+
                   setHrs[0]= ' ';
                   setHrs[1]=(Ahr%10)+48;
                   convert(setHrs);
@@ -614,7 +618,7 @@ int set_minutes(int clock_type)
 {
     int button_read;
     int hrs=0;//,minC=0,Amin=0,Ahr=0;
-    uint8_t setHrs[2];//,setMins[2];
+    uint8_t setMins[2];
 
     if(clock_type == MAIN_CLOCK){
     CommandWrite(0x87);
