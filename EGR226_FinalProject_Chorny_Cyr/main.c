@@ -21,7 +21,7 @@ void set_LEDs(int red, int blue, int green);
 void button_setup();
 void convert(uint8_t string[50]);
 //void RTC_Init();
-void RTC_Init();
+void RTC_Init(uint16_t minC,uint16_t hrC,uint16_t Ahr,uint16_t Amin); 
 void set_clocks();
 int button_press();
 int set_hours(int clock_type);
@@ -69,7 +69,7 @@ void main(void)
    Ahr = set_hours(ALARM);
    Amin = set_minutes(ALARM);
 
-RTC_Init();
+   RTC_Init(uint16_t minC,uint16_t hrC,uint16_t Ahr,uint16_t Amin);
 
    uint8_t hrs[2],minutes[2],seconds[2]; //array
 
@@ -288,9 +288,8 @@ void ADC14_IRQHandler()
     }
     ADC14->CLRIFGR1 &= ~0b1111110;
 }
-
-//void RTC_Init(){
-void RTC_Init()
+void RTC_Init(uint16_t minC,uint16_t hrC,uint16_t Ahr,uint16_t Amin)
+//void RTC_Init()
 {
     //Initialize time to 2:45:55 pm
 //    RTC_C->TIM0 = 0x2D00;  //45 min, 0 secs
