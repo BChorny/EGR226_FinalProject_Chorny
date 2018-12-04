@@ -30,7 +30,7 @@ int set_minutes(int clock_type);
 float voltage,temperatureF, temperatureC;
 uint8_t hours,mins,secs;
 int alarm_update=0,time_update=0;
-uint16_t minC, hrC, Ahr, Amin;
+
 char tempc[12],tempf[12];
 
 void main(void)
@@ -43,7 +43,7 @@ void main(void)
     //RTC_Init();
    __enable_interrupt();
 // RTC_Init(uint16_t minC,uint16_t hrC,uint16_t Ahr,uint16_t Amin);
-
+   uint16_t minC, hrC, Ahr, Amin,read_button;
 //    set_LEDs(0,0,0);
 
 
@@ -102,7 +102,19 @@ void main(void)
             }
             if(alarm_update){                           // Alarm Update Occurred (from interrupt handler)
                 printf("ALARM\n");                      // Display Alarm status to user
-                alarm_update = 0;                       // Reset Alarm Update Notification Flag
+                    
+                read_button = button_press();
+                    if(read_button == X){                //x is whatever button should be alarm off
+                            alarm_function(0);  //turns off alarm
+                            alarm_update = 0;            // Reset Alarm Update Notification Flag
+                    else if(read_button == X){   //goes to snooze function
+                            RTC_Init(uint16_t mins,uint16_t hours,uint16_t hours,uint16_t (mins+5));
+                            alarm_update = 0;            // Reset Alarm Update Notification Flag
+                    else
+                        alarm_function(1);                      //alarm sound, the 1 is to turn it on
+                
+                    
+                //alarm_update = 0;                       // Reset Alarm Update Notification Flag
             }
         }
 }
