@@ -652,7 +652,7 @@ int set_minutes(int clock_type)
                         if(mins==-1)
                             mins=59;
                      }
-              else hrs =hrs;
+              else mins =mins;
 
               if(clock_type == MAIN_CLOCK)
                 CommandWrite(0x87);
@@ -662,7 +662,7 @@ int set_minutes(int clock_type)
               if(mins < 10)
               {
                   //CommandWrite(0x85);
-                  setMins[0]= ' ';
+                  setMins[0]= '0';
                   setMins[1]=(mins%10)+48;
                   convert(setMins);
               }
